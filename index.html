@@ -282,7 +282,7 @@ h1 { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 2p
   <div>
     <div class="day-label">Campaign Day</div>
     <div style="display:flex;align-items:baseline;gap:8px;">
-      <input class="editable" id="campDay" value="1" style="font-size:28px;font-weight:800;width:55px;border-color:var(--water-700);" onchange="recalc()">
+      <input class="editable" id="campDay" value="2" style="font-size:28px;font-weight:800;width:55px;border-color:var(--water-700);" onchange="recalc()">
       <span style="color:var(--water-400);font-size:14px;font-weight:600;">/ 30</span>
     </div>
   </div>
@@ -328,17 +328,17 @@ h1 { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 2p
   <div class="kpi-row">
     <div class="kpi">
       <div class="label">7DMA Fee-Payers</div>
-      <input class="editable" id="feePayers7d" value="148" onchange="recalc()">
-      <div class="target">148 → 1,550</div>
+      <input class="editable" id="feePayers7d" value="160" onchange="recalc()">
+      <div class="target">160 → 1,550</div>
     </div>
     <div class="kpi">
       <div class="label">Daily Order Users</div>
-      <input class="editable" id="dailyOrderUsers" value="90" onchange="recalc()">
-      <div class="target">Baseline: ~90</div>
+      <input class="editable" id="dailyOrderUsers" value="107" onchange="recalc()">
+      <div class="target">Baseline: ~107</div>
     </div>
     <div class="kpi">
       <div class="label">W+1 Retention</div>
-      <input class="editable" id="w1Retention" value="18" onchange="recalc()" style="font-size:16px;">
+      <input class="editable" id="w1Retention" value="60.1" onchange="recalc()" style="font-size:16px;">
       <div class="target">12-24% → 40% (enter %)</div>
     </div>
     <div class="kpi">
@@ -359,12 +359,12 @@ h1 { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 2p
   <div class="kpi-row">
     <div class="kpi">
       <div class="label">New Activated Users</div>
-      <input class="editable" id="activatedUsers" value="0" onchange="recalc()">
+      <input class="editable" id="activatedUsers" value="7" onchange="recalc()">
       <div class="target">Target: 600</div>
     </div>
     <div class="kpi">
       <div class="label">Organic (est.)</div>
-      <input class="editable" id="organicUsers" value="0" onchange="recalc()">
+      <input class="editable" id="organicUsers" value="7" onchange="recalc()">
       <div class="target">~200 expected</div>
     </div>
     <div class="kpi">
@@ -395,17 +395,22 @@ h1 { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 2p
   <div class="kpi-row">
     <div class="kpi">
       <div class="label">Weekly Awareness</div>
-      <input class="editable" id="weeklyAwareness" value="9000" onchange="recalc()">
+      <input class="editable" id="weeklyAwareness" value="9243" onchange="recalc()">
       <div class="target">9k → 18k</div>
     </div>
     <div class="kpi">
+      <div class="label">Daily Awareness</div>
+      <input class="editable" id="dailyAwareness" value="1426" onchange="recalc()">
+      <div class="target">~1.3k/day baseline</div>
+    </div>
+    <div class="kpi">
       <div class="label">Conversion Rate</div>
-      <input class="editable" id="convRate" value="0.8" onchange="recalc()" style="font-size:16px;">
+      <input class="editable" id="convRate" value="0.7" onchange="recalc()" style="font-size:16px;">
       <div class="target">0.8% → 1.2% (enter %)</div>
     </div>
     <div class="kpi">
       <div class="label">Post-Landing Action %</div>
-      <input class="editable" id="postLanding" value="0.8" onchange="recalc()" style="font-size:16px;">
+      <input class="editable" id="postLanding" value="0.84" onchange="recalc()" style="font-size:16px;">
       <div class="target">0.8% → 3% (enter %)</div>
     </div>
     <div class="kpi">
@@ -481,7 +486,7 @@ h1 { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 2p
     </div>
     <div class="kpi">
       <div class="label">Qualifying Deposits</div>
-      <input class="editable" id="qualDeposits" value="0" onchange="recalc()">
+      <input class="editable" id="qualDeposits" value="1" onchange="recalc()">
       <div class="target">≥$100 deposit + HL criteria</div>
     </div>
     <div class="kpi">
@@ -568,8 +573,8 @@ const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTvUbqwns
 // All valid metric IDs that the sheet can set:
 const METRIC_IDS = [
   'campDay', 'activatedUsers', 'organicUsers', 'feePayers7d',
-  'dailyOrderUsers', 'w1Retention', 'weeklyAwareness', 'convRate',
-  'postLanding', 'hlDepositors', 'nonhlDepositors', 'hlAvgDep',
+  'dailyOrderUsers', 'w1Retention', 'weeklyAwareness', 'dailyAwareness',
+  'convRate', 'postLanding', 'hlDepositors', 'nonhlDepositors', 'hlAvgDep',
   'nonhlAvgDep', 'hlTimeDep', 'nonhlTimeDep', 'creditsIssued',
   'qualDeposits', 'hlRefUsers'
 ];
@@ -700,29 +705,4 @@ function recalc() {
   // Retention
   const fp = val('feePayers7d');
   const dou = val('dailyOrderUsers');
-  document.getElementById('freqRatio').textContent = fp > 0 ? (dou / fp).toFixed(2) : '0';
-
-  // North star progress bar
-  const nsProgress = Math.min(100, ((fp - 148) / (1550 - 148)) * 100);
-  document.getElementById('nsPct').textContent = Math.max(0, nsProgress).toFixed(1) + '%';
-  document.getElementById('nsBar').style.width = Math.max(0, nsProgress) + '%';
-
-  // Campaign economics
-  const credits = val('creditsIssued');
-  document.getElementById('totalCreditSpend').textContent = '$' + (credits * 50).toLocaleString();
-  const cacVal = activated > 0 ? (credits * 50 / activated).toFixed(1) : '0';
-  document.getElementById('cac').textContent = '$' + cacVal;
-}
-
-// Init
-recalc();
-document.querySelectorAll('.editable').forEach(el => {
-  el.addEventListener('input', recalc);
-});
-
-// Load from Google Sheet on page load
-loadFromSheet();
-</script>
-
-</body>
-</html>
+  docume
