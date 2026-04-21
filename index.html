@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boros 30-Day Campaign Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  color-scheme: dark;
+  --surface-metal: #090D18;
+  --surface-water-opaque: #1C212D;
+  --surface-water: rgba(191, 203, 223, 0.10);
+  --surface-water-highlighted: rgba(191, 203, 223, 0.15);
+  --surface-water-faint: rgba(191, 203, 223, 0.05);
+  --surface-grass: rgba(27, 227, 194, 0.10);
+  --surface-guava: rgba(255, 147, 147, 0.10);
+  --surface-info: rgba(96, 121, 255, 0.25);
+  --surface-gold: rgba(240, 206, 116, 0.25);
+  --water-100: #DAE1EC;
+  --water-200: #BFCBDF;
+  --water-300: #9DAFCD;
+  --water-400: #7B94BD;
+  --water-500: #5B749D;
+  --water-700: #374B6D;
+  --water-800: #2B3B55;
+  --water-850: #1A2537;
+  --primary: #FFFFFF;
+  --secondary: #9DAFCD;
+  --grass: #1BE3C2;
+  --guava: #FF9393;
+  --info: #6079FF;
+  --pastel-blue: #8396FF;
+  --warning: #EFB54B;
+  --gold: #F0CE74;
+  --danger: #DD5453;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--surface-metal);
+  color: var(--primary);
+  padding: 16px;
+  line-height: 1.5;
+  font-size: 12px;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--water-800); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--water-700); }
+::-webkit-scrollbar-track { background: transparent; }
+
+h1 { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 2px; }
+.subtitle { color: var(--secondary); font-size: 12px; margin-bottom: 16px; }
+
+/* Data source banner */
+.data-source-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 5px;
+  font-size: 11px;
+  margin-bottom: 14px;
+}
+.data-source-banner.connected { background: var(--surface-grass); border: 1px solid var(--grass); color: var(--grass); }
+.data-source-banner.disconnected { background: var(--surface-water); border: 1px solid var(--water-700); color: var(--secondary); }
+.data-source-banner.error { background: var(--surface-guava); border: 1px solid var(--guava); color: var(--guava); }
+.data-source-banner .dot { width: 6px; height: 6px; border-radius: 9999px; }
+.data-source-banner.connected .dot { background: var(--grass); }
+.data-source-banner.disconnected .dot { background: var(--water-400); }
+.data-source-banner.error .dot { background: var(--guava); }
+
+/* Day banner */
+.day-banner {
+  background: var(--surface-water-opaque);
+  border: 1px solid var(--water-700);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.day-banner .day-label { font-size: 10px; font-weight: 600; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.day-banner .pivot-check {
+  background: var(--surface-water);
+  border: 1px solid var(--water-700);
+  border-radius: 5px;
+  padding: 8px 14px;
+  font-size: 11px;
+  color: var(--secondary);
+}
+.pivot-check.warning { background: var(--surface-gold); border-color: var(--warning); color: var(--warning); }
+.pivot-check.ok { background: var(--surface-grass); border-color: var(--grass); color: var(--grass); }
+
+/* Flow diagram */
+.flow-strip {
+  background: var(--surface-water-opaque);
+  border: 1px solid var(--water-700);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
+}
+.flow-node {
+  text-align: center;
+  padding: 10px 16px;
+  border-radius: 5px;
+  min-width: 120px;
+}
+.flow-node.layer3 { background: var(--surface-water); border: 1px solid var(--water-700); }
+.flow-node.layer2 { background: var(--surface-info); border: 1px solid var(--info); }
+.flow-node.layer1 { background: var(--surface-grass); border: 1px solid var(--grass); }
+.flow-node .flow-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.flow-node.layer3 .flow-label { color: var(--secondary); }
+.flow-node.layer2 .flow-label { color: var(--pastel-blue); }
+.flow-node.layer1 .flow-label { color: var(--grass); }
+.flow-node .flow-value { font-size: 16px; font-weight: 700; }
+.flow-node.layer3 .flow-value { color: var(--primary); }
+.flow-node.layer2 .flow-value { color: var(--primary); }
+.flow-node.layer1 .flow-value { color: var(--grass); }
+.flow-node .flow-target { font-size: 10px; color: var(--water-400); margin-top: 1px; }
+.flow-arrow {
+  font-size: 18px;
+  color: var(--water-500);
+  padding: 0 8px;
+  font-weight: 700;
+  user-select: none;
+}
+.flow-multiply {
+  font-size: 12px;
+  color: var(--water-400);
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+/* Section / Card */
+.section {
+  background: var(--surface-water-opaque);
+  border: 1px solid var(--water-700);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.section.highlight-border { border-color: var(--info); border-width: 1px; }
+.section.north-star-border { border-color: var(--grass); border-width: 1px; }
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-title .icon { font-size: 16px; }
+.section-title .tag {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  margin-left: 6px;
+}
+.tag.north-star { background: var(--surface-grass); color: var(--grass); }
+.tag.driver { background: var(--surface-info); color: var(--info); }
+.tag.input { background: var(--surface-water); color: var(--secondary); }
+
+/* KPI row */
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.kpi {
+  background: var(--surface-water);
+  border: 1px solid var(--water-700);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+.kpi .label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.kpi .value { font-size: 20px; font-weight: 700; color: var(--primary); }
+.kpi .target { font-size: 10px; color: var(--water-400); margin-top: 2px; }
+.kpi .value.green { color: var(--grass); }
+.kpi .value.red { color: var(--guava); }
+.kpi .value.amber { color: var(--warning); }
+
+/* Editable inputs */
+.editable {
+  background: transparent;
+  border: 1px dashed var(--water-700);
+  border-radius: 5px;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  width: 100%;
+  color: var(--primary);
+  padding: 2px 4px;
+  font-family: 'Inter', sans-serif;
+}
+.editable:focus {
+  border-color: var(--info);
+  outline: none;
+  background: var(--surface-info);
+}
+.editable.sm { font-size: 12px; font-weight: 600; }
+
+/* Progress bar */
+.progress-wrap {
+  background: var(--water-800);
+  border-radius: 9999px;
+  height: 8px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+  background: linear-gradient(90deg, var(--info), var(--pastel-blue));
+}
+
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--secondary);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--water-700);
+}
+.data-table td { padding: 7px 8px; border-bottom: 1px solid rgba(55, 75, 109, 0.4); color: var(--primary); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table .editable { font-size: 12px; font-weight: 600; text-align: right; }
+.data-table .right { text-align: right; }
+.data-table .highlight { background: var(--surface-grass); }
+
+/* Pill tags */
+.pill { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; }
+.pill.green { background: var(--surface-grass); color: var(--grass); }
+.pill.red { background: var(--surface-guava); color: var(--guava); }
+.pill.amber { background: var(--surface-gold); color: var(--warning); }
+.pill.blue { background: var(--surface-info); color: var(--info); }
+
+/* Two column */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+.note { font-size: 10px; color: var(--water-400); margin-top: 8px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<h1>Boros 30-Day Campaign Tracker</h1>
+<p class="subtitle">HL-Targeting Growth Catalyst · April–May 2026</p>
+
+<!-- Data Source Status -->
+<div id="dataSourceBanner" class="data-source-banner disconnected">
+  <div class="dot"></div>
+  <span id="dataSourceMsg">No Google Sheet connected — edit values manually, or see setup instructions below</span>
+</div>
+
+<!-- Day Banner -->
+<div class="day-banner">
+  <div>
+    <div class="day-label">Campaign Day</div>
+    <div style="display:flex;align-items:baseline;gap:8px;">
+      <input class="editable" id="campDay" value="1" style="font-size:28px;font-weight:800;width:55px;border-color:var(--water-700);" onchange="recalc()">
+      <span style="color:var(--water-400);font-size:14px;font-weight:600;">/ 30</span>
+    </div>
+  </div>
+  <div id="pivotBox" class="pivot-check">
+    Day 15 Pivot Check: —
+  </div>
+  <div style="text-align:right;">
+    <div class="day-label">North Star</div>
+    <div style="font-size:12px;color:var(--secondary);">7DMA Fee-Payers: <span style="color:var(--primary);font-weight:700;">148</span> <span style="color:var(--water-400);">→</span> <span style="color:var(--grass);font-weight:700;">1,550</span></div>
+  </div>
+</div>
+
+<!-- Growth Route Flow Diagram -->
+<div class="flow-strip">
+  <div class="flow-node layer3">
+    <div class="flow-label">Input</div>
+    <div class="flow-value" id="flowAwareness">9K</div>
+    <div class="flow-target">Awareness / wk</div>
+  </div>
+  <div class="flow-multiply">×</div>
+  <div class="flow-node layer3">
+    <div class="flow-label">Input</div>
+    <div class="flow-value" id="flowConv">0.8%</div>
+    <div class="flow-target">Conversion Rate</div>
+  </div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node layer2">
+    <div class="flow-label">Driver</div>
+    <div class="flow-value" id="flowActivated">0</div>
+    <div class="flow-target">New Activated Users</div>
+  </div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-node layer1">
+    <div class="flow-label">North Star</div>
+    <div class="flow-value" id="flowFeePayers">148</div>
+    <div class="flow-target">7DMA Fee-Payers</div>
+  </div>
+</div>
+
+<!-- Section 1: North Star — 7DMA Fee-Payers -->
+<div class="section north-star-border">
+  <div class="section-title"><span class="icon">🎯</span> 7DMA Fee-Payers <span class="tag north-star">North Star</span></div>
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">7DMA Fee-Payers</div>
+      <input class="editable" id="feePayers7d" value="148" onchange="recalc()">
+      <div class="target">148 → 1,550</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Daily Order Users</div>
+      <input class="editable" id="dailyOrderUsers" value="90" onchange="recalc()">
+      <div class="target">Baseline: ~90</div>
+    </div>
+    <div class="kpi">
+      <div class="label">W+1 Retention</div>
+      <input class="editable" id="w1Retention" value="18" onchange="recalc()" style="font-size:16px;">
+      <div class="target">12-24% → 40% (enter %)</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Frequency Ratio</div>
+      <div class="value" id="freqRatio">0.61</div>
+      <div class="target">Daily Orders / 7DMA</div>
+    </div>
+  </div>
+  <div style="font-size:11px;color:var(--secondary);margin-bottom:4px;">7DMA Progress to 1,550: <span id="nsPct" style="color:var(--primary);font-weight:600;">0%</span></div>
+  <div class="progress-wrap">
+    <div class="progress-fill" id="nsBar" style="width:0%;background:linear-gradient(90deg, var(--grass), #1be3c2aa);"></div>
+  </div>
+</div>
+
+<!-- Section 2: New User Activation (Campaign) -->
+<div class="section highlight-border">
+  <div class="section-title"><span class="icon">🚀</span> New User Activation <span class="tag driver">Driver</span></div>
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">New Activated Users</div>
+      <input class="editable" id="activatedUsers" value="0" onchange="recalc()">
+      <div class="target">Target: 600</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Organic (est.)</div>
+      <input class="editable" id="organicUsers" value="0" onchange="recalc()">
+      <div class="target">~200 expected</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Campaign-Sourced</div>
+      <div class="value" id="campaignSourced">0</div>
+      <div class="target">Need +400</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Daily Pace</div>
+      <div class="value" id="dailyPace">0</div>
+      <div class="target">Need 20/day</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Projected 30-Day</div>
+      <div class="value" id="projected30">0</div>
+      <div class="target">Target: 600</div>
+    </div>
+  </div>
+  <div style="font-size:11px;color:var(--secondary);margin-bottom:4px;">Activation Progress: <span id="activPct" style="color:var(--primary);font-weight:600;">0%</span></div>
+  <div class="progress-wrap">
+    <div class="progress-fill" id="activBar" style="width:0%;"></div>
+  </div>
+</div>
+
+<!-- Section 3: Awareness & Conversion (Funnel Inputs) -->
+<div class="section">
+  <div class="section-title"><span class="icon">📊</span> Awareness & Conversion <span class="tag input">Inputs</span></div>
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">Weekly Awareness</div>
+      <input class="editable" id="weeklyAwareness" value="9000" onchange="recalc()">
+      <div class="target">9k → 18k</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Conversion Rate</div>
+      <input class="editable" id="convRate" value="0.8" onchange="recalc()" style="font-size:16px;">
+      <div class="target">0.8% → 1.2% (enter %)</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Post-Landing Action %</div>
+      <input class="editable" id="postLanding" value="0.8" onchange="recalc()" style="font-size:16px;">
+      <div class="target">0.8% → 3% (enter %)</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Weekly Activations (calc)</div>
+      <div class="value" id="weeklyActCalc" style="color:var(--info);">72</div>
+      <div class="target">Awareness × Conv%</div>
+    </div>
+  </div>
+  <p class="note">These are the two levers that feed New Activated Users. Campaign targets: 2× awareness + 1.5× conversion = ~3× activation pace.</p>
+</div>
+
+<!-- Section 4: User Quality — HL vs Non-HL -->
+<div class="section">
+  <div class="section-title"><span class="icon">👥</span> User Quality — HL vs Non-HL</div>
+  <div class="two-col">
+    <div>
+      <table class="data-table">
+        <thead><tr><th>Metric</th><th class="right">HL</th><th class="right">Non-HL</th></tr></thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--secondary);">New Depositors</td>
+            <td class="right"><input class="editable sm" id="hlDepositors" value="0" onchange="recalc()" style="width:60px;"></td>
+            <td class="right"><input class="editable sm" id="nonhlDepositors" value="0" onchange="recalc()" style="width:60px;"></td>
+          </tr>
+          <tr>
+            <td style="color:var(--secondary);">Avg Deposit ($)</td>
+            <td class="right"><input class="editable sm" id="hlAvgDep" value="9274" style="width:70px;"></td>
+            <td class="right"><input class="editable sm" id="nonhlAvgDep" value="5183" style="width:70px;"></td>
+          </tr>
+          <tr>
+            <td style="color:var(--secondary);">Median Time to Deposit</td>
+            <td class="right"><input class="editable sm" id="hlTimeDep" value="8" style="width:50px;"><span style="color:var(--secondary);"> min</span></td>
+            <td class="right"><input class="editable sm" id="nonhlTimeDep" value="16" style="width:50px;"><span style="color:var(--secondary);"> min</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--secondary);">HL Share of New Users</td>
+            <td colspan="2" class="right"><span id="hlShare" style="font-size:14px;font-weight:700;color:var(--info);">0%</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="note">Baseline: 43% overlap. HL users deposit 1.8× higher & 2× faster.</p>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--secondary);text-transform:uppercase;letter-spacing:0.5px;">Deposit Bucket Conversion (baseline)</div>
+      <table class="data-table">
+        <thead><tr><th>Bucket</th><th class="right">Trade Rate</th><th class="right">Avg Time</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--secondary);">&lt; $10</td><td class="right" style="font-weight:600;">66.7%</td><td class="right" style="color:var(--secondary);">0.2 days</td></tr>
+          <tr><td style="color:var(--secondary);">$10–100</td><td class="right" style="font-weight:600;">80.6%</td><td class="right" style="color:var(--secondary);">0.6 days</td></tr>
+          <tr class="highlight"><td><strong style="color:var(--grass);">$100–1K ★</strong></td><td class="right" style="font-weight:700;color:var(--grass);">77.5%</td><td class="right" style="color:var(--secondary);">0.6 days</td></tr>
+          <tr><td style="color:var(--secondary);">$1K–10K</td><td class="right" style="font-weight:600;">85.5%</td><td class="right" style="color:var(--secondary);">0.3 days</td></tr>
+          <tr><td style="color:var(--secondary);">$10K+</td><td class="right" style="font-weight:600;">94.1%</td><td class="right" style="color:var(--secondary);">0.1 days</td></tr>
+        </tbody>
+      </table>
+      <p class="note">★ $100 min deposit = campaign qualifying threshold</p>
+    </div>
+  </div>
+</div>
+
+<!-- Section 5: Campaign Economics -->
+<div class="section">
+  <div class="section-title"><span class="icon">💰</span> Campaign Economics</div>
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">$50 Credits Issued</div>
+      <input class="editable" id="creditsIssued" value="0" onchange="recalc()">
+      <div class="target">To qualifying wallets</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Total Credit Spend</div>
+      <div class="value" id="totalCreditSpend">$0</div>
+      <div class="target">Credits × $50</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Qualifying Deposits</div>
+      <input class="editable" id="qualDeposits" value="0" onchange="recalc()">
+      <div class="target">≥$100 deposit + HL criteria</div>
+    </div>
+    <div class="kpi">
+      <div class="label">HL Ref Code Users</div>
+      <input class="editable" id="hlRefUsers" value="0" onchange="recalc()">
+      <div class="target">Via HL community refs</div>
+    </div>
+    <div class="kpi">
+      <div class="label">CAC (per activated)</div>
+      <div class="value" id="cac">$0</div>
+      <div class="target">Credit spend / activated</div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 6: Top Acquiring Markets -->
+<div class="section">
+  <div class="section-title"><span class="icon">🏆</span> Top User-Acquiring Markets (Baseline)</div>
+  <table class="data-table">
+    <thead><tr><th>Market</th><th class="right">New Users</th><th class="right">LTV (wtd)</th><th class="right">Total $ Contributed</th></tr></thead>
+    <tbody>
+      <tr class="highlight">
+        <td style="font-weight:600;color:var(--grass);">CL (WTI) / HL</td>
+        <td class="right" style="font-weight:600;">69</td>
+        <td class="right" style="font-weight:600;">$28.79</td>
+        <td class="right" style="font-weight:600;">$1,987</td>
+      </tr>
+      <tr class="highlight">
+        <td style="font-weight:600;color:var(--grass);">BRENTOIL / HL</td>
+        <td class="right" style="font-weight:600;">54</td>
+        <td class="right" style="font-weight:600;">$36.08</td>
+        <td class="right" style="font-weight:600;">$1,948</td>
+      </tr>
+      <tr>
+        <td style="font-weight:600;color:var(--secondary);">SOL / HL</td>
+        <td class="right" style="font-weight:600;">46</td>
+        <td class="right">$14.00</td>
+        <td class="right">$644</td>
+      </tr>
+      <tr>
+        <td style="font-weight:600;color:var(--warning);">ETH / BN 🔥</td>
+        <td class="right" style="font-weight:600;">42</td>
+        <td class="right" style="font-weight:700;color:var(--warning);">$153.60</td>
+        <td class="right" style="font-weight:700;color:var(--warning);">$6,451</td>
+      </tr>
+      <tr>
+        <td style="font-weight:600;color:var(--secondary);">ETH / HL</td>
+        <td class="right" style="font-weight:600;">41</td>
+        <td class="right">$45.19</td>
+        <td class="right">$1,852</td>
+      </tr>
+      <tr>
+        <td style="font-weight:600;color:var(--secondary);">BTC / HL</td>
+        <td class="right" style="font-weight:600;">40</td>
+        <td class="right">$28.26</td>
+        <td class="right">$1,130</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note">Oil markets lead in new user acquisition. ETH/BN has highest LTV ($153.60) and revenue contribution ($6.4k).</p>
+</div>
+
+<script>
+// =====================================================================
+// GOOGLE SHEETS INTEGRATION
+// =====================================================================
+// HOW TO CONNECT:
+// 1. Create a Google Sheet with two columns:
+//    Column A = metric   |  Column B = value
+//    campDay             |  12
+//    activatedUsers      |  185
+//    organicUsers        |  80
+//    feePayers7d         |  210
+//    ... etc (see METRIC_IDS below for all valid keys)
+//
+// 2. Publish the sheet:
+//    File → Share → Publish to web → Sheet1 → CSV → Publish
+//
+// 3. Paste the published CSV URL below (replace the empty string):
+// =====================================================================
+
+const SHEET_CSV_URL = ''; // ← PASTE YOUR PUBLISHED CSV URL HERE
+
+// All valid metric IDs that the sheet can set:
+const METRIC_IDS = [
+  'campDay', 'activatedUsers', 'organicUsers', 'feePayers7d',
+  'dailyOrderUsers', 'w1Retention', 'weeklyAwareness', 'convRate',
+  'postLanding', 'hlDepositors', 'nonhlDepositors', 'hlAvgDep',
+  'nonhlAvgDep', 'hlTimeDep', 'nonhlTimeDep', 'creditsIssued',
+  'qualDeposits', 'hlRefUsers'
+];
+
+async function loadFromSheet() {
+  const banner = document.getElementById('dataSourceBanner');
+  const msg = document.getElementById('dataSourceMsg');
+
+  if (!SHEET_CSV_URL) {
+    banner.className = 'data-source-banner disconnected';
+    msg.textContent = 'No Google Sheet connected — edit values manually (see source code for setup)';
+    return;
+  }
+
+  try {
+    banner.className = 'data-source-banner disconnected';
+    msg.textContent = 'Fetching data from Google Sheet...';
+
+    const res = await fetch(SHEET_CSV_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+
+    // Parse CSV: each row is "metric,value"
+    const rows = text.trim().split('\n');
+    let count = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i].trim();
+      if (!row) continue;
+
+      // Simple CSV parse (handles quoted values)
+      const parts = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+      if (!parts || parts.length < 2) continue;
+
+      const key = parts[0].replace(/"/g, '').trim();
+      const val = parts[1].replace(/"/g, '').trim();
+
+      // Skip header row
+      if (key.toLowerCase() === 'metric' || key.toLowerCase() === 'key') continue;
+
+      const el = document.getElementById(key);
+      if (el && METRIC_IDS.includes(key)) {
+        el.value = val;
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      banner.className = 'data-source-banner connected';
+      msg.textContent = 'Google Sheet connected — ' + count + ' metrics loaded · Last fetch: ' + new Date().toLocaleTimeString();
+      recalc();
+    } else {
+      banner.className = 'data-source-banner error';
+      msg.textContent = 'Sheet fetched but 0 metrics matched. Check column A uses valid metric IDs.';
+    }
+  } catch (err) {
+    banner.className = 'data-source-banner error';
+    msg.textContent = 'Failed to fetch sheet: ' + err.message + ' — check the URL and that the sheet is published';
+  }
+}
+
+// =====================================================================
+// DASHBOARD LOGIC
+// =====================================================================
+
+function fmt(n) {
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + (n/1e3).toFixed(1) + 'K';
+  return '$' + n.toFixed(0);
+}
+function val(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+function recalc() {
+  const day = val('campDay');
+  const activated = val('activatedUsers');
+  const organic = val('organicUsers');
+  const campaignSourced = activated - organic;
+
+  document.getElementById('campaignSourced').textContent = Math.max(0, campaignSourced);
+  const pace = day > 0 ? (activated / day).toFixed(1) : '0';
+  document.getElementById('dailyPace').textContent = pace;
+  document.getElementById('dailyPace').className = 'value ' + (parseFloat(pace) >= 20 ? 'green' : parseFloat(pace) >= 10 ? 'amber' : 'red');
+
+  const proj = day > 0 ? Math.round((activated / day) * 30) : 0;
+  document.getElementById('projected30').textContent = proj;
+  document.getElementById('projected30').className = 'value ' + (proj >= 600 ? 'green' : proj >= 400 ? 'amber' : 'red');
+
+  const pct = Math.min(100, (activated / 600 * 100)).toFixed(1);
+  document.getElementById('activPct').textContent = pct + '%';
+  document.getElementById('activBar').style.width = pct + '%';
+
+  // Pivot check
+  const pivotBox = document.getElementById('pivotBox');
+  const organicPace = 209 / 30;
+  if (day >= 15) {
+    const currentPace = parseFloat(pace);
+    const ratio = (currentPace / organicPace).toFixed(1);
+    if (currentPace >= organicPace * 1.5) {
+      pivotBox.className = 'pivot-check ok';
+      pivotBox.innerHTML = '✅ Day 15+: ' + ratio + '× organic pace — on track';
+    } else {
+      pivotBox.className = 'pivot-check warning';
+      pivotBox.innerHTML = '⚠️ Day 15+: ' + ratio + '× organic — BELOW 1.5× threshold';
+    }
+  } else {
+    pivotBox.className = 'pivot-check';
+    pivotBox.innerHTML = 'Day 15 Pivot Check in <strong>' + (15 - day) + '</strong> days';
+  }
+
+  // Funnel
+  const awareness = val('weeklyAwareness');
+  const conv = val('convRate');
+  const weeklyAct = Math.round(awareness * conv / 100);
+  document.getElementById('weeklyActCalc').textContent = weeklyAct;
+
+  // Flow diagram live values
+  document.getElementById('flowAwareness').textContent = awareness >= 1000 ? (awareness/1000).toFixed(0) + 'K' : awareness;
+  document.getElementById('flowConv').textContent = conv + '%';
+  document.getElementById('flowActivated').textContent = activated;
+  document.getElementById('flowFeePayers').textContent = val('feePayers7d');
+
+  // User quality
+  const hlDep = val('hlDepositors');
+  const nonhlDep = val('nonhlDepositors');
+  const total = hlDep + nonhlDep;
+  document.getElementById('hlShare').textContent = total > 0 ? (hlDep / total * 100).toFixed(1) + '%' : '—';
+
+  // Retention
+  const fp = val('feePayers7d');
+  const dou = val('dailyOrderUsers');
+  document.getElementById('freqRatio').textContent = fp > 0 ? (dou / fp).toFixed(2) : '0';
+
+  // North star progress bar
+  const nsProgress = Math.min(100, ((fp - 148) / (1550 - 148)) * 100);
+  document.getElementById('nsPct').textContent = Math.max(0, nsProgress).toFixed(1) + '%';
+  document.getElementById('nsBar').style.width = Math.max(0, nsProgress) + '%';
+
+  // Campaign economics
+  const credits = val('creditsIssued');
+  document.getElementById('totalCreditSpend').textContent = '$' + (credits * 50).toLocaleString();
+  const cacVal = activated > 0 ? (credits * 50 / activated).toFixed(1) : '0';
+  document.getElementById('cac').textContent = '$' + cacVal;
+}
+
+// Init
+recalc();
+document.querySelectorAll('.editable').forEach(el => {
+  el.addEventListener('input', recalc);
+});
+
+// Load from Google Sheet on page load
+loadFromSheet();
+</script>
+
+</body>
+</html>
