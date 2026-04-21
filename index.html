@@ -705,4 +705,34 @@ function recalc() {
   // Retention
   const fp = val('feePayers7d');
   const dou = val('dailyOrderUsers');
-  docume
+  document.getElementById('freqRatio').textContent = fp > 0 ? (dou / fp).toFixed(2) : '0';
+
+  // North star progress bar
+  const nsProgress = Math.min(100, ((fp - 160) / (1550 - 160)) * 100);
+  document.getElementById('nsPct').textContent = Math.max(0, nsProgress).toFixed(1) + '%';
+  document.getElementById('nsBar').style.width = Math.max(0, nsProgress) + '%';
+
+  // Campaign economics
+  const credits = val('creditsIssued');
+  document.getElementById('totalCreditSpend').textContent = '$' + (credits * 50).toLocaleString();
+  const cacVal = activated > 0 ? (credits * 50 / activated).toFixed(1) : '0';
+  document.getElementById('cac').textContent = '$' + cacVal;
+}
+
+// Init
+recalc();
+document.querySelectorAll('.editable').forEach(el => {
+  el.addEventListener('input', recalc);
+});
+
+// Load from Google Sheet on page load
+loadFromSheet();
+</script>
+
+<!-- Version footer -->
+<div style="text-align:center;padding:16px 0 8px;font-size:10px;color:var(--water-500);">
+  v1.4 · Updated 2026-04-21 · Format rev: daily awareness + corrected metrics
+</div>
+
+</body>
+</html>
