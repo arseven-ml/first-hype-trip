@@ -518,4 +518,174 @@ function renderFrChart() {
     datasets.push({
       label: ex.charAt(0).toUpperCase() + ex.slice(1),
       data: labels.map(d => dateMap[d] !== undefined ? (dateMap[d] * 100) : null),
-      borderColor: EXCH
+      borderColor: EXCH_BORDER[ex],
+      backgroundColor: EXCH_COLORS[ex] + '33',
+      borderWidth: ex === 'okx' ? 2.5 : 2,
+      borderDash: !BOROS_VENUES.has(ex) ? [5, 3] : [],
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      tension: 0.3,
+      spanGaps: true,
+    });
+  }
+  if (frChart) frChart.destroy();
+  frChart = new Chart(document.getElementById('frChart'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11, weight: 600 }, usePointStyle: true, pointStyle: 'line', padding: 16 } },
+        tooltip: {
+          callbacks: {
+            title: ctx => ctx[0].label,
+            label: ctx => `${ctx.dataset.label}: ${ctx.raw !== null ? ctx.raw.toFixed(2) + '%' : 'N/A'}`,
+          }
+        },
+        title: { display: true, text: `${asset} — Annualized Funding Rate by Exchange (30D)`, font: { size: 14, weight: 700 }, color: '#0D0D1F', padding: { bottom: 12 } }
+      },
+      scales: {
+        x: { ticks: { font: { size: 9 }, maxRotation: 45, color: '#6B7280' }, grid: { color: '#F3F4F6' } },
+        y: { ticks: { callback: v => v.toFixed(0) + '%', color: '#6B7280' }, grid: { color: '#F3F4F6' },
+             title: { display: true, text: 'Annualized FR (%)', font: { size: 11, weight: 600 }, color: '#6B7280' } }
+      }
+    }
+  });
+
+  // Compute summary stats
+  const statsDiv = document.getElementById('fr-stats');
+  const statRows = [];
+  for (const [ex, pts] of Object.entries(exchData)) {
+    if (!frActiveExch.has(ex)) continue;
+    const vals = pts.map(p => p[1]).filter(v => v !== 0);
+    if (!vals.length) continue;
+    const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
+    const last = pts[pts.length - 1][1];
+    const last7 = pts.slice(-7).map(p => p[1]).filter(v => v !== 0);
+    const avg7 = last7.length ? last7.reduce((s, v) => s + v, 0) / last7.length : 0;
+    statRows.push({ ex, avg: avg * 100, last: last * 100, avg7: avg7 * 100 });
+  }
+  if (statRows.length) {
+    const maxSpread = statRows.length >= 2 ? Math.max(...statRows.map(r => r.avg7)) - Math.min(...statRows.map(r => r.avg7)) : 0;
+    statsDiv.innerHTML = statRows.map(r =>
+      `<div class="fr-stat"><div class="s-label">${r.ex}</div><div class="s-val">${r.avg7.toFixed(1)}% <span style="font-size:10px;color:var(--text-sub)">(7D avg)</span></div><div style="font-size:10px;color:var(--text-sub)">30D avg: ${r.avg.toFixed(1)}% | Latest: ${r.last.toFixed(1)}%</div></div>`
+    ).join('') + `<div class="fr-stat" style="background:var(--boros-teal-light)"><div class="s-label">Max 7D Spread</div><div class="s-val" style="color:${maxSpread > 5 ? 'var(--pos)' : maxSpread > 2 ? 'var(--warn)' : 'var(--text-sub)'}">${maxSpread.toFixed(1)}%</div><div style="font-size:10px;color:var(--text-sub)">Between selected exchanges</div></div>`;
+  } else {
+    statsDiv.innerHTML = '';
+  }
+}
+
+frAssetSel.addEventListener('change', renderFrChart);
+renderFrChart();
+
+// ─── User Concentration Tab ────────────────────────────────────────────────
+const UC_DATA = [
+  {name:'SILVERUSDC-HL',id:123,single:2,multi:7,sVol:34329,mVol:58648,fees:12,avgMkts:9.0},
+  {name:'XYZ100USDC-HL',id:125,single:2,multi:6,sVol:6008,mVol:518271,fees:86,avgMkts:9.7},
+  {name:'GOLDUSDC-HL',id:121,single:2,multi:8,sVol:3120,mVol:158607,fees:11,avgMkts:15.4},
+  {name:'CLUSDT-BN',id:103,single:1,multi:12,sVol:3400,mVol:7129,fees:10,avgMkts:11.3},
+  {name:'HYPEUSDT-BY',id:116,single:1,multi:15,sVol:5677,mVol:780635,fees:61,avgMkts:11.7},
+  {name:'XRPUSDC-HL',id:119,single:1,multi:20,sVol:25000,mVol:1098306,fees:47,avgMkts:0},
+  {name:'XRPUSDT-BN',id:120,single:0,multi:12,sVol:0,mVol:842651,fees:61,avgMkts:12.8},
+  {name:'S&P500USDC-HL',id:126,single:0,multi:9,sVol:0,mVol:445080,fees:45,avgMkts:9.4},
+  {name:'XAUUSDT-BN',id:122,single:0,multi:8,sVol:0,mVol:114961,fees:38,avgMkts:16.8},
+  {name:'BZUSDT-BN',id:105,single:0,multi:10,sVol:0,mVol:14033,fees:17,avgMkts:0},
+];
+
+const ucLabels = UC_DATA.map(m => m.id + '_' + m.name.replace('USDC-HL','').replace('USDT-BN','').replace('USDT-BY',''));
+const ucSingleVolPct = UC_DATA.map(m => {
+  const total = m.sVol + m.mVol;
+  return total > 0 ? Math.round(m.sVol / total * 100) : 0;
+});
+
+new Chart(document.getElementById('ucUserChart'), {
+  type: 'bar',
+  data: {
+    labels: ucLabels,
+    datasets: [
+      { label: 'Single-pool', data: UC_DATA.map(m => m.single), backgroundColor: '#6366F1', borderRadius: 3 },
+      { label: 'Multi-pool', data: UC_DATA.map(m => m.multi), backgroundColor: '#00D4AA', borderRadius: 3 },
+      { label: 'Single vol %', data: ucSingleVolPct, type: 'line', borderColor: '#EF4444', borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#EF4444', yAxisID: 'y1', tension: 0.3 }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position:'top', labels:{font:{size:10},usePointStyle:true,padding:10} },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label === 'Single vol %' ? 'Vol share: ' + ctx.raw + '%' : ctx.dataset.label + ': ' + ctx.raw + ' users' } }
+    },
+    scales: {
+      x: { stacked: true, ticks: { font: { size: 8 }, maxRotation: 45, color: '#6B7280' } },
+      y: { stacked: true, title: { display: true, text: 'Users', font:{size:10} }, ticks: { color: '#6B7280' } },
+      y1: { position:'right', min:0, max:50, title: { display:true, text:'Single vol %', font:{size:10}, color:'#EF4444' }, ticks: { callback: v=>v+'%', color:'#EF4444' }, grid:{display:false} }
+    }
+  }
+});
+
+new Chart(document.getElementById('ucVolChart'), {
+  type: 'bar',
+  data: {
+    labels: ucLabels,
+    datasets: [
+      { label: 'Single-pool vol', data: UC_DATA.map(m => m.sVol), backgroundColor: '#6366F1', borderRadius: 3 },
+      { label: 'Multi-pool vol', data: UC_DATA.map(m => m.mVol), backgroundColor: '#00D4AA', borderRadius: 3 }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position:'top', labels:{font:{size:10},usePointStyle:true,padding:10} },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.raw) } }
+    },
+    scales: {
+      x: { stacked: true, ticks: { font: { size: 8 }, maxRotation: 45, color: '#6B7280' } },
+      y: { stacked: true, title: { display:true, text:'7D Volume (USD)', font:{size:10} }, ticks: { callback: v => fmt(v), color: '#6B7280' } }
+    }
+  }
+});
+
+new gridjs.Grid({
+  columns: [
+    { name: 'Market', width: '140px' },
+    { name: 'Fees/wk', width: '65px' },
+    { name: 'Users', width: '50px' },
+    { name: 'Single', width: '50px' },
+    { name: 'Multi', width: '50px' },
+    { name: 'Single %', width: '60px' },
+    { name: 'Single Vol', width: '75px' },
+    { name: 'Multi Vol', width: '85px' },
+    { name: 'S.Vol Share', width: '75px' },
+    { name: 'Avg Mkts', width: '65px' },
+    { name: 'Verdict', width: '120px' },
+  ],
+  data: UC_DATA.map(m => {
+    const total = m.sVol + m.mVol;
+    const sVolPct = total > 0 ? Math.round(m.sVol / total * 100) : 0;
+    const sPct = Math.round(m.single / (m.single + m.multi) * 100);
+    let verdict, cls;
+    if (sPct >= 20 && sVolPct >= 20) { verdict = 'CAPTIVE NICHE'; cls = 'badge-navy'; }
+    else if (sPct > 0 && sVolPct >= 10) { verdict = 'SOME LOYALTY'; cls = 'badge-yellow'; }
+    else if (sPct > 0) { verdict = 'DUST LOYALTY'; cls = 'badge-yellow'; }
+    else { verdict = 'NO CAPTIVE'; cls = 'badge-red'; }
+    return [
+      gridjs.html('<span class="mid">' + m.id + '</span>' + m.name),
+      '$' + m.fees,
+      m.single + m.multi,
+      m.single,
+      m.multi,
+      gridjs.html('<span style="font-weight:700;color:' + (sPct>=20?'var(--boros-purple)':'var(--text-sub)') + '">' + sPct + '%</span>'),
+      fmt(m.sVol),
+      fmt(m.mVol),
+      gridjs.html('<span style="font-weight:700;color:' + (sVolPct>=20?'var(--boros-purple)':sVolPct>0?'var(--warn)':'var(--text-sub)') + '">' + sVolPct + '%</span>'),
+      m.avgMkts > 0 ? m.avgMkts.toFixed(1) : '—',
+      gridjs.html('<span class="badge ' + cls + '">' + verdict + '</span>'),
+    ];
+  }),
+  sort: true,
+}).render(document.getElementById('uc-grid'));
+
+document.getElementById('uc-verdict').innerHTML = '<div class="warn-box warn-green"><h3>Captive niche — consider keeping</h3><div class="warn-item"><strong><span class="mid">123</span>SILVERUSDC-HL</strong> — 22% single-pool users drive 37% of volume. Dedicated silver traders with no other Boros activity.</div></div><div class="warn-box warn-yellow"><h3>Marginal loyalty — low impact on delist</h3><div class="warn-item"><strong><span class="mid">103</span>CLUSDT-BN</strong> — 1 loyal user = 32% of vol, but pool is tiny ($10/wk fees). Oil rolling regardless.</div><div class="warn-item"><strong><span class="mid">119</span>XRPUSDC-HL</strong> — 1 single-pool user ($25K vol) but 20 multi-pool users drive 98%.</div></div><div class="warn-box warn-red"><h3>No captive users — safe to let expire</h3><div class="warn-item"><strong><span class="mid">121</span>GOLDUSDC-HL</strong> — 2 single-pool users = dust volume (2%). All real activity from power users averaging 15 other markets.</div><div class="warn-item"><strong>XRP-BN, S&amp;P500-HL, XAU-BN, BZ-BN</strong> — 0% single-pool. Every user trades 9-17 other markets.</div></div>';
+</script>
+</body>
+</html>
