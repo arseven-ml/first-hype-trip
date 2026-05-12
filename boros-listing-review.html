@@ -134,6 +134,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans
     <div class="tab" data-tab="maturity">Maturity & Rollover</div>
     <div class="tab" data-tab="watch">Watch List</div>
     <div class="tab" data-tab="fr">FR Comparison</div>
+    <div class="tab" data-tab="uc">User Concentration</div>
   </div>
   <div id="s-health" class="section active">
     <div class="chart-row">
@@ -172,6 +173,20 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans
       <canvas id="frChart"></canvas>
     </div>
     <div class="fr-stats" id="fr-stats"></div>
+  </div>
+  <div id="s-uc" class="section">
+    <div class="cards" style="margin-bottom:16px">
+      <div class="card"><div class="label">Low-Fee Pools</div><div class="value teal">10</div></div>
+      <div class="card"><div class="label">Unique Users</div><div class="value">107</div></div>
+      <div class="card"><div class="label">Single-Pool Users</div><div class="value warn">12</div></div>
+      <div class="card"><div class="label">Avg Markets (Multi)</div><div class="value">11.8</div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-box"><h3>User Type Breakdown (bars) & Single-Pool Vol Share (line)</h3><canvas id="ucUserChart"></canvas></div>
+      <div class="chart-box"><h3>7D Volume by User Type</h3><canvas id="ucVolChart"></canvas></div>
+    </div>
+    <div id="uc-grid"></div>
+    <div id="uc-verdict" style="margin-top:12px"></div>
   </div>
 </div>
 
@@ -503,29 +518,4 @@ function renderFrChart() {
     datasets.push({
       label: ex.charAt(0).toUpperCase() + ex.slice(1),
       data: labels.map(d => dateMap[d] !== undefined ? (dateMap[d] * 100) : null),
-      borderColor: EXCH_BORDER[ex],
-      backgroundColor: EXCH_COLORS[ex] + '33',
-      borderWidth: ex === 'okx' ? 2.5 : 2,
-      borderDash: !BOROS_VENUES.has(ex) ? [5, 3] : [],
-      pointRadius: 0,
-      pointHoverRadius: 4,
-      tension: 0.3,
-      spanGaps: true,
-    });
-  }
-  if (frChart) frChart.destroy();
-  frChart = new Chart(document.getElementById('frChart'), {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'top', labels: { font: { size: 11, weight: 600 }, usePointStyle: true, pointStyle: 'line', padding: 16 } },
-        tooltip: {
-          callbacks: {
-            title: ctx => ctx[0].label,
-            label: ctx => `${ctx.dataset.label}: ${ctx.raw !== null ? ctx.raw.toFixed(2) + '%' : 'N/A'}`,
-          }
-        },
-        title: { display: true, text: `${asset} — Annualized Fund
+      borderColor: EXCH
