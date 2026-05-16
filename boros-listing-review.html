@@ -478,10 +478,11 @@ async function loadFrData() {
     const resp = await fetch(FR_CSV_URL);
     if (!resp.ok) throw new Error('CSV fetch failed: ' + resp.status);
     const csv = await resp.text();
-    const rows = csv.trim().split('\n').slice(1); // skip header
+    const rows = csv.trim().split('\n').filter(r => !r.startsWith('#')).slice(1); // skip comments + header
     const data = {};
     for (const row of rows) {
       const [date, asset, exchange, rate] = row.split(',');
+      if (!date || !asset) continue; // skip malformed lines
       if (!data[asset]) data[asset] = {};
       if (!data[asset][exchange]) data[asset][exchange] = [];
       data[asset][exchange].push([date, parseFloat(rate)]);
