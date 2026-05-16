@@ -629,6 +629,7 @@ function renderFrChart() {
       plugins: {
         legend: { position: 'top', labels: { font: { size: 11, weight: 600 }, usePointStyle: true, pointStyle: 'line', padding: 16 } },
         tooltip: {
+          itemSort: (a, b) => (b.raw || 0) - (a.raw || 0),
           callbacks: {
             title: ctx => ctx[0].label,
             label: ctx => `${ctx.dataset.label}: ${ctx.raw !== null ? ctx.raw.toFixed(2) + '%' : 'N/A'}`,
@@ -655,7 +656,7 @@ function renderFrChart() {
     const last = pts[pts.length - 1][1];
     const last7 = pts.slice(-7).map(p => p[1]).filter(v => v !== 0);
     const avg7 = last7.length ? last7.reduce((s, v) => s + v, 0) / last7.length : 0;
-    statRows.push({ ex, avg: avg * 100, last: last * 100, avg7: avg7 * 100 });
+    statRows.push({ ex, avg, last, avg7 });
   }
   if (statRows.length) {
     const maxSpread = statRows.length >= 2 ? Math.max(...statRows.map(r => r.avg7)) - Math.min(...statRows.map(r => r.avg7)) : 0;
