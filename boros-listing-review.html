@@ -607,7 +607,7 @@ function renderFrChart() {
     const dateMap = Object.fromEntries(pts);
     datasets.push({
       label: ex.charAt(0).toUpperCase() + ex.slice(1),
-      data: labels.map(d => dateMap[d] !== undefined ? (dateMap[d] * 100) : null),
+      data: labels.map(d => dateMap[d] !== undefined ? dateMap[d] : null),
       borderColor: EXCH_BORDER[ex],
       backgroundColor: EXCH_COLORS[ex] + '33',
       borderWidth: ex === 'okx' ? 2.5 : 2,
