@@ -472,11 +472,11 @@ new gridjs.Grid({
 
 // ─── FR Comparison Tab ─────────────────────────────────────────────────────
 let FR_DATA = {};
-const FR_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSLqKyJY-PHP-itD4vfGznE5rlZNlknxKjnpKLaNoh8mzL72fMIdDS5BTrIpsAUFRNxG0V49mzQTYKb/pub?gid=33188606&single=true&output=csv';
+const FR_CSV_URL = 'fr_data.csv';
 async function loadFrData() {
   try {
-    const resp = await fetch(FR_SHEET_URL);
-    if (!resp.ok) throw new Error('Sheet fetch failed: ' + resp.status);
+    const resp = await fetch(FR_CSV_URL);
+    if (!resp.ok) throw new Error('CSV fetch failed: ' + resp.status);
     const csv = await resp.text();
     const rows = csv.trim().split('\n').slice(1); // skip header
     const data = {};
@@ -517,14 +517,14 @@ const BOROS_VENUES = new Set(['binance','hyperliquid','okx','bybit','gate','ligh
 const frLoadingDiv = document.createElement('div');
 frLoadingDiv.id = 'fr-loading';
 frLoadingDiv.style.cssText = 'text-align:center;padding:40px;color:var(--text-sub);font-size:14px;';
-frLoadingDiv.textContent = 'Loading funding rate data from Google Sheet...';
+frLoadingDiv.textContent = 'Loading funding rate data...';
 document.getElementById('frChart').parentElement.prepend(frLoadingDiv);
 
 (async function initFrTab() {
   const ok = await loadFrData();
   const loadEl = document.getElementById('fr-loading');
   if (!ok) {
-    if (loadEl) loadEl.textContent = 'Failed to load FR data. Check that the Google Sheet is published to web.';
+    if (loadEl) loadEl.textContent = 'Failed to load FR data. Ensure fr_data.csv is in the same directory.';
     return;
   }
   if (loadEl) loadEl.remove();
