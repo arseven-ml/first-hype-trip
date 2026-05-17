@@ -128,7 +128,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans
   <div class="logo">B</div>
   <h1>Boros</h1>
   <span class="pipe">|</span>
-  <span class="sub">Listing Review &mdash; 2026-05-11</span>
+  <span class="sub">Listing Review &mdash; data as of <span id="refreshDate">…</span></span>
 </div>
 
 <div class="content">
@@ -478,6 +478,9 @@ async function loadFrData() {
     const resp = await fetch(FR_CSV_URL);
     if (!resp.ok) throw new Error('CSV fetch failed: ' + resp.status);
     const csv = await resp.text();
+    // Extract refreshed timestamp from comment line
+    const refreshMatch = csv.match(/^# refreshed:\s*(.+)/m);
+    if (refreshMatch) document.getElementById('refreshDate').textContent = refreshMatch[1].trim();
     const rows = csv.trim().split('\n').filter(r => !r.startsWith('#')).slice(1); // skip comments + header
     const data = {};
     for (const row of rows) {
