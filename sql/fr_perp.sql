@@ -1,0 +1,82 @@
+-- 30D perp funding rates for dashboard FR Comparison tab
+-- Full refresh: use as-is (30 day window)
+-- Incremental: replace "INTERVAL 32 DAY" with "INTERVAL 3 DAY"
+--   and "INTERVAL 30 DAY" with "INTERVAL 2 DAY"
+WITH symbols AS (
+  SELECT 'BTC' AS asset, 'Binance' AS exchange, 'BTCUSDT' AS sym UNION ALL
+  SELECT 'BTC','Bitget','BTCUSDT_UMCBL' UNION ALL
+  SELECT 'BTC','Bybit','BTCUSDT' UNION ALL
+  SELECT 'BTC','Gate','BTC_USDT' UNION ALL
+  SELECT 'BTC','Hyperliquid','BTC' UNION ALL
+  SELECT 'BTC','Lighter','BTC-USDC' UNION ALL
+  SELECT 'BTC','OKX','BTC-USDT-SWAP' UNION ALL
+  SELECT 'ETH','Binance','ETHUSDT' UNION ALL
+  SELECT 'ETH','Bitget','ETHUSDT_UMCBL' UNION ALL
+  SELECT 'ETH','Bybit','ETHUSDT' UNION ALL
+  SELECT 'ETH','Gate','ETH_USDT' UNION ALL
+  SELECT 'ETH','Hyperliquid','ETH' UNION ALL
+  SELECT 'ETH','Lighter','ETH-USDC' UNION ALL
+  SELECT 'ETH','OKX','ETH-USDT-SWAP' UNION ALL
+  SELECT 'SOL','Binance','SOLUSDT' UNION ALL
+  SELECT 'SOL','Bitget','SOLUSDT_UMCBL' UNION ALL
+  SELECT 'SOL','Bybit','SOLUSDT' UNION ALL
+  SELECT 'SOL','Gate','SOL_USDT' UNION ALL
+  SELECT 'SOL','Hyperliquid','SOL' UNION ALL
+  SELECT 'SOL','Lighter','SOL-USDC' UNION ALL
+  SELECT 'SOL','OKX','SOL-USDT-SWAP' UNION ALL
+  SELECT 'XRP','Binance','XRPUSDT' UNION ALL
+  SELECT 'XRP','Bitget','XRPUSDT_UMCBL' UNION ALL
+  SELECT 'XRP','Bybit','XRPUSDT' UNION ALL
+  SELECT 'XRP','Gate','XRP_USDT' UNION ALL
+  SELECT 'XRP','Hyperliquid','XRP' UNION ALL
+  SELECT 'XRP','OKX','XRP-USDT-SWAP' UNION ALL
+  SELECT 'BNB','Binance','BNBUSDT' UNION ALL
+  SELECT 'BNB','Bitget','BNBUSDT_UMCBL' UNION ALL
+  SELECT 'BNB','Bybit','BNBUSDT' UNION ALL
+  SELECT 'BNB','Gate','BNB_USDT' UNION ALL
+  SELECT 'BNB','Hyperliquid','BNB' UNION ALL
+  SELECT 'BNB','OKX','BNB-USDT-SWAP' UNION ALL
+  SELECT 'HYPE','Bitget','HYPEUSDT_UMCBL' UNION ALL
+  SELECT 'HYPE','Bybit','HYPEUSDT' UNION ALL
+  SELECT 'HYPE','Gate','HYPE_USDT' UNION ALL
+  SELECT 'HYPE','Hyperliquid','HYPE' UNION ALL
+  SELECT 'HYPE','OKX','HYPE-USDT-SWAP' UNION ALL
+  SELECT 'XAU','Binance','XAUUSDT' UNION ALL
+  SELECT 'XAU','Bybit','GOLDUSDT' UNION ALL
+  SELECT 'XAU','Hyperliquid','xyz:GOLD' UNION ALL
+  SELECT 'XAU','OKX','XAUUSD-SWAP' UNION ALL
+  SELECT 'XAG','Binance','XAGUSDT' UNION ALL
+  SELECT 'XAG','Hyperliquid','xyz:SILVER' UNION ALL
+  SELECT 'CL','Binance','CLUSDT' UNION ALL
+  SELECT 'CL','Bitget','CLUSDT_UMCBL' UNION ALL
+  SELECT 'CL','Bybit','CLUSDT' UNION ALL
+  SELECT 'CL','Gate','CL_USDT' UNION ALL
+  SELECT 'CL','OKX','CL-USDT-SWAP' UNION ALL
+  SELECT 'CL','Hyperliquid','xyz:CL' UNION ALL
+  SELECT 'BZ','Binance','BZUSDT' UNION ALL
+  SELECT 'BZ','Bitget','BZUSDT_UMCBL' UNION ALL
+  SELECT 'BZ','Bybit','BZUSDT' UNION ALL
+  SELECT 'BZ','Gate','BZ_USDT' UNION ALL
+  SELECT 'BZ','OKX','BZ-USDT-SWAP' UNION ALL
+  SELECT 'BZ','Hyperliquid','xyz:BRENTOIL' UNION ALL
+  SELECT 'SP500','Hyperliquid','xyz:SP500'
+),
+daily AS (
+  SELECT
+    CAST(m.dt AS DATE) AS dt_date,
+    s.asset,
+    LOWER(s.exchange) AS exchange,
+    AVG(m.normalized_funding_rate * 24 * 365 * 100) AS rate
+  FROM `pendle-data.coinglass.market_funding_rate` m
+  JOIN symbols s ON m.exchange = s.exchange AND m.trading_pair_symbol_raw = s.sym
+  WHERE m.dt >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 32 DAY)
+  GROUP BY 1,2,3
+)
+SELECT
+  FORMAT_DATE('%Y-%m-%d', dt_date) AS date,
+  asset,
+  exchange,
+  ROUND(rate, 4) AS rate
+FROM daily
+WHERE dt_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+ORDER BY asset, exchange, dt_date
